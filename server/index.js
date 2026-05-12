@@ -15,11 +15,26 @@ import { seedCatalogIfEmpty } from './seed/defaultCatalog.js';
 
 dotenv.config();
 
+const defaultOrigins = "http://localhost:5173";
+const allowedOrigins = (process.env.CLIENT_URL || defaultOrigins)
+  .split(",")
+  .map((s) => s.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(null, false);
+  },
+  credentials: true,
+};
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 mongoose.connect(process.env.MONGODB_URI)
@@ -39,4 +54,7 @@ app.use('/api/v1/admin', adminRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => console.log(`Сервер на порту ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Сервер на порту ${PORT}`);
+  console.log(`CORS: ${allowedOrigins.join(", ")}`);
+});
