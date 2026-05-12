@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import { PageLoader } from "../components/PageLoader";
 
 export default function Exercises() {
   const [exercises, setExercises] = useState([]);
@@ -12,10 +13,19 @@ export default function Exercises() {
     equipment: "",
   });
   const { user } = useAuth();
+  const firstFetchDone = useRef(false);
+  const [listLoading, setListLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const { data } = await api.get("/exercises", { params: { search } });
-    setExercises(data);
+    try {
+      const { data } = await api.get("/exercises", { params: { search } });
+      setExercises(data);
+    } finally {
+      if (!firstFetchDone.current) {
+        firstFetchDone.current = true;
+        setListLoading(false);
+      }
+    }
   }, [search]);
 
   useEffect(() => {
@@ -38,6 +48,8 @@ export default function Exercises() {
     await api.delete(`/exercises/${id}`);
     load();
   };
+
+  if (listLoading) return <PageLoader />;
 
   return (
     <div id="katalog-vprav">

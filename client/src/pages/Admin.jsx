@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../api";
 import toast from "react-hot-toast";
+import { PageLoader } from "../components/PageLoader";
 
 function roleUa(role) {
   if (role === "admin") return "Адміністратор";
@@ -14,14 +15,19 @@ export default function Admin() {
     totalSessions: 0,
     totalExercises: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const [u, s] = await Promise.all([
-      api.get("/admin/users"),
-      api.get("/admin/stats"),
-    ]);
-    setUsers(u.data);
-    setStats(s.data);
+    try {
+      const [u, s] = await Promise.all([
+        api.get("/admin/users"),
+        api.get("/admin/stats"),
+      ]);
+      setUsers(u.data);
+      setStats(s.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -34,6 +40,8 @@ export default function Admin() {
     load();
     toast.success("Користувача видалено");
   };
+
+  if (loading) return <PageLoader />;
 
   return (
     <div>

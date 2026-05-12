@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { format, subMonths } from "date-fns";
 import { uk } from "date-fns/locale";
+import { PageLoader } from "../components/PageLoader";
 
 function sessionVolume(s) {
   return s.exercises.reduce(
@@ -25,18 +26,23 @@ export default function Analytics() {
   const [volume, setVolume] = useState(0);
   const [records, setRecords] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const start = format(subMonths(new Date(), 3), "yyyy-MM-dd");
-    const end = format(new Date(), "yyyy-MM-dd");
-    const [v, r, h] = await Promise.all([
-      api.get("/analytics/volume", { params: { start, end } }),
-      api.get("/analytics/records"),
-      api.get("/analytics/history", { params: { start, end } }),
-    ]);
-    setVolume(v.data.totalVolume);
-    setRecords(r.data);
-    setSessions(Array.isArray(h.data) ? h.data : []);
+    try {
+      const start = format(subMonths(new Date(), 3), "yyyy-MM-dd");
+      const end = format(new Date(), "yyyy-MM-dd");
+      const [v, r, h] = await Promise.all([
+        api.get("/analytics/volume", { params: { start, end } }),
+        api.get("/analytics/records"),
+        api.get("/analytics/history", { params: { start, end } }),
+      ]);
+      setVolume(v.data.totalVolume);
+      setRecords(r.data);
+      setSessions(Array.isArray(h.data) ? h.data : []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -60,6 +66,8 @@ export default function Analytics() {
         volume: vol,
       }));
   }, [sessions]);
+
+  if (loading) return <PageLoader />;
 
   return (
     <div className="space-y-10">

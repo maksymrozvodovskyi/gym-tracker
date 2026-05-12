@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import Layout from "./components/Layout";
+import { ScreenLoader } from "./components/PageLoader";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -14,12 +15,7 @@ import Admin from "./pages/Admin";
 
 const Protected = ({ children, adminOnly }) => {
   const { user, loading } = useAuth();
-  if (loading)
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-        Завантаження…
-      </div>
-    );
+  if (loading) return <ScreenLoader />;
   if (!user) return <Navigate to="/login" />;
   if (adminOnly && user.role !== "admin") return <Navigate to="/" />;
   return children;

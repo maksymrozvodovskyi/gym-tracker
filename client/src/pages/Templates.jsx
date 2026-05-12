@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
 import toast from "react-hot-toast";
+import { PageLoader, InlineSpinner } from "../components/PageLoader";
 
 const PRESET_INFO = [
   {
@@ -23,15 +24,20 @@ export default function Templates() {
   const [exercises, setExercises] = useState([]);
   const [form, setForm] = useState({ name: "", exercises: [] });
   const [bootLoading, setBootLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const addedListRef = useRef(null);
 
   const load = async () => {
-    const [t, e] = await Promise.all([
-      api.get("/templates"),
-      api.get("/exercises"),
-    ]);
-    setTemplates(t.data);
-    setExercises(e.data);
+    try {
+      const [t, e] = await Promise.all([
+        api.get("/templates"),
+        api.get("/exercises"),
+      ]);
+      setTemplates(t.data);
+      setExercises(e.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -86,6 +92,8 @@ export default function Templates() {
     load();
   };
 
+  if (loading) return <PageLoader />;
+
   return (
     <div className="space-y-10">
       <p className="text-slate-600 dark:text-slate-300 max-w-3xl text-sm leading-relaxed mb-2">
@@ -122,8 +130,9 @@ export default function Templates() {
             type="button"
             disabled={bootLoading}
             onClick={bootstrap}
-            className="btn btn-primary"
+            className="btn btn-primary inline-flex items-center justify-center gap-2"
           >
+            {bootLoading ? <InlineSpinner size={20} /> : null}
             {bootLoading ? "Завантаження…" : "Додати базові шаблони"}
           </button>
         </div>

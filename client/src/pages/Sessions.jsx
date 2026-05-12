@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../api";
 import toast from "react-hot-toast";
+import { PageLoader } from "../components/PageLoader";
 
 function exIdStr(id) {
   if (!id) return "";
@@ -18,16 +19,21 @@ export default function Sessions() {
   const [exercises, setExercises] = useState([]);
   const [active, setActive] = useState(null);
   const [tplSelectKey, setTplSelectKey] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const [s, t, e] = await Promise.all([
-      api.get("/sessions"),
-      api.get("/templates"),
-      api.get("/exercises"),
-    ]);
-    setSessions(s.data);
-    setTemplates(t.data);
-    setExercises(e.data);
+    try {
+      const [s, t, e] = await Promise.all([
+        api.get("/sessions"),
+        api.get("/templates"),
+        api.get("/exercises"),
+      ]);
+      setSessions(s.data);
+      setTemplates(t.data);
+      setExercises(e.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -93,6 +99,8 @@ export default function Sessions() {
     load();
     toast.success("Сесію збережено");
   };
+
+  if (loading) return <PageLoader />;
 
   return (
     <div>
