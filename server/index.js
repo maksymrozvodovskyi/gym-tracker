@@ -15,34 +15,19 @@ import { seedCatalogIfEmpty } from './seed/defaultCatalog.js';
 
 dotenv.config();
 
-const defaultOrigins = "http://localhost:5173";
-const allowedOrigins = (process.env.CLIENT_URL || defaultOrigins)
-  .split(",")
-  .map((s) => s.trim().replace(/\/$/, ""))
-  .filter(Boolean);
-
-const corsOptions = {
-  origin(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(null, false);
-  },
-  credentials: true,
-};
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 app.use(express.json());
-
-mongoose.connect(process.env.MONGODB_URI)
-  .then(async () => {
-    console.log('Підключено до MongoDB');
-    await seedCatalogIfEmpty();
-  })
-  .catch(err => console.error('Помилка MongoDB:', err));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
@@ -54,7 +39,27 @@ app.use('/api/v1/admin', adminRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Сервер на порту ${PORT}`);
-  console.log(`CORS: ${allowedOrigins.join(", ")}`);
-});
+async function start() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error("MONGODB_URI не задано в .env / змінних середовища");
+    process.exit(1);
+  }
+  try {
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 20_000,
+    });
+    console.log("Підключено до MongoDB");
+    await seedCatalogIfEmpty();
+  } catch (err) {
+    console.error("Не вдалося підключитися до MongoDB:", err.message);
+    process.exit(1);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Сервер на порту ${PORT}`);
+    console.log("CORS: дозволено будь-який origin");
+  });
+}
+
+start();
