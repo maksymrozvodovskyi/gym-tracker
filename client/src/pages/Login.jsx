@@ -14,10 +14,17 @@ export default function Login() {
     e.preventDefault();
     try {
       await login(email, password);
-      nav("/");
       toast.success("Ви увійшли в акаунт");
+      nav("/", { replace: true });
     } catch (e) {
-      toast.error(e.response?.data?.message || "Не вдалося увійти");
+      const d = e.response?.data;
+      const msg =
+        d?.message ||
+        (Array.isArray(d?.errors) && d.errors[0]?.msg) ||
+        (!e.response &&
+          "Немає зв’язку з сервером. Перевірте VITE_API_URL і що бекенд запущено.") ||
+        "Не вдалося увійти";
+      toast.error(msg);
     }
   };
 

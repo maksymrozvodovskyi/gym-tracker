@@ -15,10 +15,17 @@ export default function Register() {
     e.preventDefault();
     try {
       await register(email, password, name);
-      nav("/");
       toast.success("Акаунт створено");
+      nav("/", { replace: true });
     } catch (e) {
-      toast.error(e.response?.data?.message || "Не вдалося зареєструватися");
+      const d = e.response?.data;
+      const msg =
+        d?.message ||
+        (Array.isArray(d?.errors) && d.errors[0]?.msg) ||
+        (!e.response &&
+          "Немає зв’язку з сервером. Перевірте VITE_API_URL і що бекенд запущено.") ||
+        "Не вдалося зареєструватися";
+      toast.error(msg);
     }
   };
 

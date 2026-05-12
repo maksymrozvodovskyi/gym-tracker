@@ -18,7 +18,13 @@ api.interceptors.response.use(
   (r) => r,
   async (err) => {
     const original = err.config;
-    if (err.response?.status === 401 && !original._retry) {
+    if (!original) return Promise.reject(err);
+
+    const path = original.url || "";
+    const skipRefresh =
+      path.includes("/auth/login") || path.includes("/auth/register");
+
+    if (err.response?.status === 401 && !original._retry && !skipRefresh) {
       original._retry = true;
       const refresh = localStorage.getItem("refreshToken");
       if (refresh) {

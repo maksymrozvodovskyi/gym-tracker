@@ -7,11 +7,14 @@ import { attachStarterTemplates } from "../seed/defaultCatalog.js";
 
 const router = express.Router();
 
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+
 const generateTokens = (user) => {
-  const access = jwt.sign({ id: user._id }, process.env.JWT_ACCESS_SECRET, {
+  const id = String(user._id);
+  const access = jwt.sign({ id }, process.env.JWT_ACCESS_SECRET, {
     expiresIn: process.env.JWT_ACCESS_EXPIRES || "15m",
   });
-  const refresh = jwt.sign({ id: user._id }, process.env.JWT_REFRESH_SECRET, {
+  const refresh = jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES || "7d",
   });
   return { access, refresh };
@@ -32,7 +35,8 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty())
       return res.status(400).json({ errors: errors.array() });
-    const { email, password, name } = req.body;
+    const { password, name } = req.body;
+    const email = normalizeEmail(req.body.email);
     const exists = await User.findOne({ email });
     if (exists)
       return res.status(400).json({ message: "Ця пошта вже зареєстрована" });
@@ -61,7 +65,8 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty())
       return res.status(400).json({ errors: errors.array() });
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = normalizeEmail(req.body.email);
     const user = await User.findOne({ email });
     if (!user || !(await bcrypt.compare(password, user.passwordHash)))
       return res
